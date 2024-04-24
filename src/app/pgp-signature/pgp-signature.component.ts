@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, NgModule } from '@angular/core';
 import * as openpgp from 'openpgp';
 
 @Component({
@@ -6,7 +6,9 @@ import * as openpgp from 'openpgp';
   template: `
     <div>
       <p>Select Private Key: </p><input type="file" (change)="onPrivateKeySelected($event)" placeholder="Select Private Key">
+      <input type="password" placeholder="Enter Private Key Password" [(ngModel)]="this.passphrase">
       <p>Select Document: </p><input type="file" (change)="onDataFileSelected($event)" placeholder="Select Data File">
+      <p>Signature Document: </p><input type="file" (change)="onSignatureFileSelected($event)" placeholder="Select Signature File">
       <button (click)="generateSignature()" [disabled]="this.selectedDataFile == null && this.selectedPrivateKey == null">Generate Signature</button>
     </div>
   `,
@@ -28,10 +30,11 @@ import * as openpgp from 'openpgp';
     }
   `
 })
-export class PgpSignatureComponent {
+export class PGPSignatureComponent {
   selectedPrivateKey: File | null = null;
   selectedDataFile: File | null = null;
   detachedSignatureFile: File | null = null;
+  passphrase: string = '';
 
   onPrivateKeySelected(event: any) {
     this.selectedPrivateKey = event.target.files[0];
@@ -41,8 +44,12 @@ export class PgpSignatureComponent {
     this.selectedDataFile = event.target.files[0];
   }
 
-  onFileSelected(event: any) {
-    this.selectedPrivateKey = event.target.files[0];
+  onSignatureFileSelected(event: any) {
+    this.detachedSignatureFile = event.target.files[0];
+  }
+
+  onPassphraseChanged(event: any) {
+    this.passphrase = event.target.value;
   }
 
   async generateSignature() {
@@ -51,28 +58,36 @@ export class PgpSignatureComponent {
       return;
     }
 
-    const privateKeyReader = new FileReader();
-    const dataFileReader = new FileReader();
+    const byteArray = new Uint8Array(await this.selectedDataFile.arrayBuffer());
+    const privateKeyPem = await this.selectedPrivateKey.text();
+    const signatures = await this.detachedSignatureFile?.text();
 
-    privateKeyReader.onload = async () => {
-      const privateKeyPem = privateKeyReader.result as string;
+    this.saveSignature(await this.sign(byteArray, privateKeyPem, this.passphrase, signatures));
+    this.passphrase = '';
 
-      dataFileReader.onload = async () => {
-        const arrayBuffer = dataFileReader.result as ArrayBuffer;
-        const byteArray = new Uint8Array(arrayBuffer);
+    // const privateKeyReader = new FileReader();
+    // const dataFileReader = new FileReader();
 
-        this.saveSignature(await this.sign(byteArray, privateKeyPem, 'Ai5!hM#c'));
-      };
+    // privateKeyReader.onload = async () => {
+    //   const privateKeyPem = privateKeyReader.result as string;
 
-      dataFileReader.readAsArrayBuffer(this.selectedDataFile as Blob);
-    };
+    //   dataFileReader.onload = async () => {
+    //     const arrayBuffer = dataFileReader.result as ArrayBuffer;
+    //     const byteArray = new Uint8Array(arrayBuffer);
 
-    privateKeyReader.readAsText(this.selectedPrivateKey);
+    //     this.saveSignature(await this.sign(byteArray, privateKeyPem, 'Ai5!hM#c'));
+    //   };
+
+    //   dataFileReader.readAsArrayBuffer(this.selectedDataFile as Blob);
+    // };
+
+    // privateKeyReader.readAsText(this.selectedPrivateKey);
   }
 
-  async sign(data: Uint8Array, privateKeyPem: string, passphrase: string): Promise<string> {
+  async sign(data: Uint8Array, privateKeyPem: string, passphrase: string, armoredSignatures: string | undefined): Promise<string> {
     const privKeyObj = await openpgp.readPrivateKey({ armoredKey: privateKeyPem });
     const privateKey = await openpgp.decryptKey({ privateKey: privKeyObj, passphrase: passphrase });
+
     const message = await openpgp.createMessage({ binary: data, format: 'binary' });
     const detachedSignature = await openpgp.sign({
         message,
@@ -80,9 +95,16 @@ export class PgpSignatureComponent {
         detached: true,
         format: 'armored'
     });
-    console.log(detachedSignature);
+    const detachedSignatureNoArmor = await openpgp.readSignature({ armoredSignature: detachedSignature });
+    let armor = detachedSignatureNoArmor.armor();
 
-    return detachedSignature;
+    if(armoredSignatures) {
+      const signatures = await openpgp.readSignature({ armoredSignature: armoredSignatures })
+      signatures.packets.push(detachedSignatureNoArmor.packets[0]);
+      armor = signatures.armor();
+    }
+
+    return armor;
   }
 
   saveSignature(signature: string) {
