@@ -1,34 +1,13 @@
 import { Component, NgModule } from '@angular/core';
+
+import { saveToFile } from '../utils/FileUtils';
+
 import * as openpgp from 'openpgp';
 
 @Component({
   selector: 'app-pgp-signature',
-  template: `
-    <div>
-      <p>Select Private Key: </p><input type="file" (change)="onPrivateKeySelected($event)" placeholder="Select Private Key">
-      <input type="password" placeholder="Enter Private Key Password" [(ngModel)]="this.passphrase">
-      <p>Select Document: </p><input type="file" (change)="onDataFileSelected($event)" placeholder="Select Data File">
-      <p>Signature Document: </p><input type="file" (change)="onSignatureFileSelected($event)" placeholder="Select Signature File">
-      <button (click)="generateSignature()" [disabled]="this.selectedDataFile == null && this.selectedPrivateKey == null">Generate Signature</button>
-    </div>
-  `,
-  styles: `
-    p {
-      margin: 0;
-    }
-    input {
-      display: block;
-      margin-bottom: 15px;
-    }
-    button {
-      margin-top: 10px;
-
-      &:disabled {
-        cursor: not-allowed;
-        opacity: 0.5;
-      }
-    }
-  `
+  templateUrl: './pgp-signature.component.html',
+  styleUrls: ['./pgp-signature.component.scss']
 })
 export class PGPSignatureComponent {
   selectedPrivateKey: File | null = null;
@@ -62,26 +41,8 @@ export class PGPSignatureComponent {
     const privateKeyPem = await this.selectedPrivateKey.text();
     const signatures = await this.detachedSignatureFile?.text();
 
-    this.saveSignature(await this.sign(byteArray, privateKeyPem, this.passphrase, signatures));
+    this.saveSignature(await this.sign(byteArray, privateKeyPem, this.passphrase, signatures), this.selectedDataFile.name);
     this.passphrase = '';
-
-    // const privateKeyReader = new FileReader();
-    // const dataFileReader = new FileReader();
-
-    // privateKeyReader.onload = async () => {
-    //   const privateKeyPem = privateKeyReader.result as string;
-
-    //   dataFileReader.onload = async () => {
-    //     const arrayBuffer = dataFileReader.result as ArrayBuffer;
-    //     const byteArray = new Uint8Array(arrayBuffer);
-
-    //     this.saveSignature(await this.sign(byteArray, privateKeyPem, 'Ai5!hM#c'));
-    //   };
-
-    //   dataFileReader.readAsArrayBuffer(this.selectedDataFile as Blob);
-    // };
-
-    // privateKeyReader.readAsText(this.selectedPrivateKey);
   }
 
   async sign(data: Uint8Array, privateKeyPem: string, passphrase: string, armoredSignatures: string | undefined): Promise<string> {
@@ -107,11 +68,7 @@ export class PGPSignatureComponent {
     return armor;
   }
 
-  saveSignature(signature: string) {
-    const blob = new Blob([signature], { type: 'text/plain' });
-    const anchor = document.createElement('a');
-    anchor.download = 'signature.sig';
-    anchor.href = window.URL.createObjectURL(blob);
-    anchor.click();
+  saveSignature = (signature: string, signedFileName: string) => {
+    saveToFile(signature, `${new Date(Date.now()).toISOString()}_${signedFileName}.sig`).click();
   }
 }

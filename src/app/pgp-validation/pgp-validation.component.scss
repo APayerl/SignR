@@ -6,3 +6,24 @@ input {
 button {
     margin-top: 10px;
 }
+
+.confirmation {
+    margin-top: 20px;
+    background-color: #96ff66;
+    border: solid black 2px;
+    border-radius: 5px;
+    padding: 10px;
+    width: auto;
+}
+
+.failure {
+    margin-top: 20px;
+    background-color: #ff8787;
+    border: solid black 2px;
+    border-radius: 5px;
+    padding: 10px;
+    width: auto;
+}
+h1 {
+    margin-bottom: 20px;
+}

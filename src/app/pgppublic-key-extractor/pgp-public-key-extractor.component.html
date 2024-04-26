@@ -1,0 +1,5 @@
+<h1>PGP Public key Extractor</h1>
+
+<p>Select Private Key: </p>
+<input type="file" (change)="onPrivateKeySelected($event)" placeholder="Select Private Key" title="Select the private key that you want a public key for.">
+<button (click)="this.extractPublicKey()" [disabled]="this.selectedPrivateKey == null">Extract Public Key</button>

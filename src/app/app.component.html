@@ -1,3 +1,11 @@
-<app-pgp-signature></app-pgp-signature>
-<app-pgp-validation></app-pgp-validation>
-<!-- <app-pgp-public-key-combiner></app-pgp-public-key-combiner> -->
+<nav>
+    <ul>
+        <li><a routerLink="/{{this.routes.SIGN}}">Sign</a></li>
+        <li><a routerLink="/{{this.routes.VERIFY}}">Verify</a></li>
+        <li><a routerLink="/{{this.routes.PUB_KEY_EXTRACTOR}}">Extractor</a></li>
+    </ul>
+</nav>
+
+<div class="base">
+    <router-outlet></router-outlet>
+</div>

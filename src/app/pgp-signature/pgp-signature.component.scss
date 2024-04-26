@@ -1,0 +1,18 @@
+p {
+    margin: 0;
+}
+input {
+    display: block;
+    margin-bottom: 15px;
+}
+button {
+    margin-top: 10px;
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+}
+h1 {
+    margin-bottom: 20px;
+}

@@ -1,0 +1,9 @@
+<div>
+  <h1>PGP Verify</h1>
+  <p>Select Document: </p><input type="file" (change)="onDataFileSelected($event)" placeholder="Select Data File" title="The document that you want to verify has been signed.">
+  <p>Select Signature: </p><input type="file" (change)="onSignatureFileSelected($event)" placeholder="Select Signature file" title="The file containing the signatures.">
+  <p>Select Public Keys: </p><input type="file" multiple (change)="onPublicKeyFileSelected($event)" placeholder="Select Public Key file" title="The public keys you want to check if they have signed the document.">
+  <button (click)="validateSignature()" [disabled]="this.selectedDataFile == null && this.signatureFile == null && this.selectedPublicKeyFiles.length == 0">Validate Signature</button>
+  <p class="confirmation" *ngFor="let confirmation of validationConfirmations">Document is signed by: {{confirmation}}</p>
+  <p class="failure" *ngFor="let failure of validationFailures">{{failure}}</p>
+</div>

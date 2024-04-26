@@ -1,0 +1,10 @@
+<div>
+    <h1>PGP Sign</h1>
+    <p>Select Private Key: </p>
+    <input type="file" (change)="onPrivateKeySelected($event)" placeholder="Select Private Key">
+    <input type="password" placeholder="Enter Private Key Password" [(ngModel)]="this.passphrase">
+    <p>Select Document: </p>
+    <input type="file" (change)="onDataFileSelected($event)" placeholder="Select Data File">
+    <p>Signature Document: </p><input type="file" (change)="onSignatureFileSelected($event)" placeholder="Select Signature File">
+    <button (click)="generateSignature()" [disabled]="this.selectedDataFile == null && this.selectedPrivateKey == null">Generate Signature</button>
+</div>

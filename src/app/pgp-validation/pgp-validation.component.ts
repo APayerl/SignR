@@ -4,20 +4,15 @@ import * as openpgp from 'openpgp';
 @Component({
   selector: 'app-pgp-validation',
   standalone: false,
-  template: `
-  <div>
-      <p>Select Document: </p><input type="file" (change)="onDataFileSelected($event)" placeholder="Select Data File">
-      <p>Select Signature file: </p><input type="file" (change)="onSignatureFileSelected($event)" placeholder="Select Signature file">
-      <p>Select Public Key files: </p><input type="file" multiple (change)="onPublicKeyFileSelected($event)" placeholder="Select Public Key file">
-      <button (click)="validateSignature()" [disabled]="this.selectedDataFile == null && this.signatureFile == null && this.selectedPublicKeyFiles.length == 0">Validate Signature</button>
-    </div>
-  `,
+  templateUrl: './pgp-validation.component.html',
   styleUrl: './pgp-validation.component.scss'
 })
 export class PGPValidationComponent {
   selectedDataFile: File | null = null;
   selectedPublicKeyFiles: File[] = [];
   signatureFile: File | null = null;
+  validationConfirmations: string[] = [];
+  validationFailures: string[] = [];
 
   onDataFileSelected(event: any) {
     this.selectedDataFile = event.target.files[0];
@@ -35,7 +30,8 @@ export class PGPValidationComponent {
 
   async validateSignature() {
     if (!this.selectedDataFile || !this.signatureFile || this.selectedPublicKeyFiles.length == 0) {
-      console.error('No data file, signature file or public key file selected');
+      this.validationFailures = ["No data file, signature file or public key file selected"];
+      console.debug('No data file, signature file or public key file selected');
       return;
     }
 
@@ -51,6 +47,8 @@ export class PGPValidationComponent {
       verificationKeys: publicKeys
     });
 
+    this.validationConfirmations = [];
+    this.validationFailures = [];
     verified.signatures.forEach(async (signature) => {
       try {
         const KeyMapping = (key: openpgp.Key) => ({
@@ -61,9 +59,10 @@ export class PGPValidationComponent {
         const signer = publicKeys
           .map(key => KeyMapping(key))
           .find(keyMapping => keyMapping.keyID.bytes === signature.keyID.bytes);
-        console.debug("Signature verified by key id: ", signer?.userID);
+        this.validationConfirmations.push(signer!.userID);
       } catch(err) {
-        console.error('Signature is invalid: ', err);
+        this.validationFailures.push("Signature not valid.");
+        console.debug('Signature is invalid: ', err);
       }
     });
   }
